@@ -52,5 +52,12 @@ CHIP ALU {
     Add16(a=xzn, b=yzn, out=add);
 
     Mux16(a=and, b=add, sel=f, out=preout);
-    Zn16(in=preout, zero=false, negate=no, out=out);
+    Zn16(in=preout, zero=false, negate=no, out=out, out=o);
+
+    // zr
+    Or16Way(in=o, out=or16);
+    Not(in=or16, out=zr);
+
+    // ng
+    IsNeg(in=o, out=ng);
 }
