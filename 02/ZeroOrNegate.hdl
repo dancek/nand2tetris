@@ -1,0 +1,8 @@
+CHIP ZeroOrNegate {
+    IN in, zero, negate;
+    OUT out;
+
+    PARTS:
+    ZeroIf(in=in, sel=zero, out=zeroed);
+    Xor(a=zeroed, b=negate, out=out);
+}

@@ -1,0 +1,22 @@
+CHIP Zn16 {
+    IN in[16], zero, negate;
+    OUT out[16];
+
+    PARTS:
+    ZeroOrNegate(in=in[0], zero=zero, negate=negate, out=out[0]);
+    ZeroOrNegate(in=in[1], zero=zero, negate=negate, out=out[1]);
+    ZeroOrNegate(in=in[2], zero=zero, negate=negate, out=out[2]);
+    ZeroOrNegate(in=in[3], zero=zero, negate=negate, out=out[3]);
+    ZeroOrNegate(in=in[4], zero=zero, negate=negate, out=out[4]);
+    ZeroOrNegate(in=in[5], zero=zero, negate=negate, out=out[5]);
+    ZeroOrNegate(in=in[6], zero=zero, negate=negate, out=out[6]);
+    ZeroOrNegate(in=in[7], zero=zero, negate=negate, out=out[7]);
+    ZeroOrNegate(in=in[8], zero=zero, negate=negate, out=out[8]);
+    ZeroOrNegate(in=in[9], zero=zero, negate=negate, out=out[9]);
+    ZeroOrNegate(in=in[10], zero=zero, negate=negate, out=out[10]);
+    ZeroOrNegate(in=in[11], zero=zero, negate=negate, out=out[11]);
+    ZeroOrNegate(in=in[12], zero=zero, negate=negate, out=out[12]);
+    ZeroOrNegate(in=in[13], zero=zero, negate=negate, out=out[13]);
+    ZeroOrNegate(in=in[14], zero=zero, negate=negate, out=out[14]);
+    ZeroOrNegate(in=in[15], zero=zero, negate=negate, out=out[15]);
+}

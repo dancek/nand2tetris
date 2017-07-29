@@ -1,0 +1,8 @@
+CHIP ZeroIf {
+    IN in, sel;
+    OUT out;
+
+    PARTS:
+    Not(in=sel, out=keep);
+    And(a=in, b=keep, out=out);
+}
