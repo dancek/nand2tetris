@@ -16,5 +16,10 @@ CHIP PC {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    Inc16(in=cur, out=newinc);
+
+    // if sel[2] then 0, if sel[1] then in, if sel[0] then newinc, else cur
+    Mux8Way16(a=cur, b=in, c=newinc, d=in, sel[0]=load, sel[1]=inc, sel[2]=reset, out=new);
+
+    Register(in=new, load=true, out=cur, out=out);
 }
