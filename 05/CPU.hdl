@@ -39,5 +39,41 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+
+    // opcode to flag
+    DMux(in=true, sel=instruction[15], a=aop, b=cop);
+
+    // C opcode dest bits
+    And(a=cop, b=instruction[5], out=adest);
+    And(a=cop, b=instruction[4], out=dload);
+    And(a=cop, b=instruction[3], out=writeM);
+
+    // A register: load if opcode A or opcode C and A dest bit
+    Or(a=aop, b=adest, out=aload);
+    Mux16(a=instruction, b=alu, sel=adest, out=ain);
+    ARegister(in=ain, load=aload, out=aout, out[0..14]=addressM);
+
+    // C: compute, save, jump
+    Mux16(a=aout, b=inM, sel=instruction[12], out=aorm);
+    ALU(x=dout, y=aorm,
+        zx=instruction[11], nx=instruction[10],
+        zy=instruction[9], ny=instruction[8],
+        f=instruction[7], no=instruction[6],
+        out=alu, out=outM, out[15]=alusign, zr=zr, ng=ng);
+    DRegister(in=alu, load=dload, out=dout);
+
+    // result: <0, =0 or >0?
+    Or16Way(in=alu, out=nonzero);
+    Not(in=nonzero, out=eq);
+    And(a=nonzero, b=alusign, out=lt);
+    Xor(a=nonzero, b=lt, out=gt);
+
+    // jump bits vs. result
+    And(a=instruction[2], b=lt, out=jlt);
+    And(a=instruction[1], b=eq, out=jeq);
+    And(a=instruction[0], b=gt, out=jgt);
+    Or8Way(in[0]=jlt, in[1]=jeq, in[2]=jgt, out=jmpifc);
+    And(a=cop, b=jmpifc, out=jump);
+
+    PC(in=aout, load=jump, inc=true, reset=reset, out[0..14]=pc);
 }
