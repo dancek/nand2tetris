@@ -1,7 +1,9 @@
 module Lib
-    ( assembler
+    ( parser
     ) where
 
+import Data.Char (isSpace)
+import Data.Functor (void)
 import Data.Maybe (Maybe)
 import Data.Void
 import Text.Megaparsec
@@ -62,13 +64,25 @@ data BinaryOp = Add | Sub | And | Or deriving (Show)
 data Jmp = Jlt | Jle | Jeq | Jgt | Jge | Jne | Jmp deriving (Show)
 
 
+data Program = Seq [Instruction] deriving (Show)
+
 type Parser = Parsec Void String
 
+
+lineComment  = L.skipLineComment "//"
+blockComment = L.skipBlockComment "/*" "*/"
+
+-- two space consumers: scn takes any space including newlines, sc doesn't take newline
+scn :: Parser ()
+scn = L.space space1 lineComment blockComment
+
 sc :: Parser ()
-sc = L.space space1 lineComment blockComment
-  where
-    lineComment  = L.skipLineComment "//"
-    blockComment = L.skipBlockComment "/*" "*/"
+sc = L.space lineSpace lineComment blockComment
+    where
+        lineSpace = (void $ takeWhile1P Nothing isLineSpace)
+        isLineSpace ' '  = True
+        isLineSpace '\t' = True
+        isLineSpace _    = False
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
@@ -80,11 +94,14 @@ integer :: Parser Integer
 integer = lexeme L.decimal
 
 
-assembler :: Parser Instruction
-assembler = line
+parser :: Parser Program
+parser = between scn eof instructionSeq
 
-line :: Parser Instruction
-line = aInstr <|> cInstr
+instructionSeq :: Parser Program
+instructionSeq = Seq <$> sepEndBy instruction scn
+
+instruction :: Parser Instruction
+instruction = aInstr <|> cInstr
 
 aInstr :: Parser Instruction
 aInstr = do
@@ -116,7 +133,7 @@ regFromName "M" = RegM
 regFromName "D" = RegD
 
 cComp :: Parser CComp
-cComp = unaryOp <|> binaryOp <|> cValue <|> cReg
+cComp = try (unaryOp <|> binaryOp <|> cValue <|> cReg)
 
 cValue :: Parser CComp
 cValue = do
@@ -132,7 +149,7 @@ cReg :: Parser CComp
 cReg = fmap CReg reg
 
 unaryOp :: Parser CComp
-unaryOp = negOp <|> notOp <|> incrOp <|> decrOp
+unaryOp = try (negOp <|> notOp <|> incrOp <|> decrOp)
 
 prefixOp :: String -> UnaryOp -> Parser CComp
 prefixOp sym op = do
@@ -153,7 +170,7 @@ incrOp = postfixOp "+" "1" Incr
 decrOp = postfixOp "-" "1" Decr
 
 binaryOp :: Parser CComp
-binaryOp = addOp <|> subOp <|> andOp <|> orOp
+binaryOp = try (addOp <|> subOp <|> andOp <|> orOp)
 
 binOp :: String -> BinaryOp -> Parser CComp
 binOp sym op = do
