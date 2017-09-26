@@ -1,5 +1,6 @@
 module Main where
 
+import System.IO
 import Text.Megaparsec
 
 import Lib
@@ -7,4 +8,6 @@ import Lib
 main :: IO ()
 main = do
     input <- getContents
-    parseTest' parser input
+    case assembler input of
+        Left e -> hPutStr stderr $ parseErrorPretty' input e
+        Right r -> putStr r

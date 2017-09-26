@@ -40,7 +40,7 @@ parser :: Parser Program
 parser = between scn eof instructionSeq
 
 instructionSeq :: Parser Program
-instructionSeq = Seq <$> sepEndBy instruction scn
+instructionSeq = sepEndBy instruction scn
 
 instruction :: Parser Instruction
 instruction = aInstr <|> cInstr
@@ -66,7 +66,7 @@ cDest :: Parser [Reg]
 cDest = do
     dest <- some reg
     symbol "="
-    return $ dest
+    return dest
 
 reg :: Parser Reg
 reg = do

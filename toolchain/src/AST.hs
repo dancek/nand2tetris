@@ -26,7 +26,7 @@ jmp     ::= "JLT" | "JLE" | "JEQ" | "JGT" | "JGE" | "JNE" | "JMP"
 
 -}
 
-data Reg = RegA | RegM | RegD deriving (Show)
+data Reg = RegA | RegM | RegD deriving (Show, Eq)
 data RawNumber = MinusOne | Zero | One deriving (Show)
 
 data Instruction
@@ -52,4 +52,4 @@ data BinaryOp = Add | Sub | And | Or deriving (Show)
 data Jmp = Jlt | Jle | Jeq | Jgt | Jge | Jne | Jmp deriving (Show)
 
 
-data Program = Seq [Instruction] deriving (Show)
+type Program = [Instruction]
