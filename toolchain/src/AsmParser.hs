@@ -51,27 +51,16 @@ aInstr = do
     v <- integer    -- FIXME: symbols
     return (AInstr (ANum v))
 
--- aInstr = (AInstr . Anum) <$> symbol "@" *> integer
+    -- aInstr = (AInstr . Anum) <$> symbol "@" *> integer
 
 cInstr :: Parser Instruction
-cInstr = do
-    dest <- optional cDest
-    comp <- cComp
-    jump <- optional cJump
-    return $ CInstr dest comp jump
-
--- cInstr = CInstr <$> optional cDest <*> cComp <*> optional cJump
+cInstr = CInstr <$> optional cDest <*> cComp <*> optional cJump
 
 cDest :: Parser [Reg]
-cDest = do
-    dest <- some reg
-    symbol "="
-    return dest
+cDest = try (some reg <* symbol "=")
 
 reg :: Parser Reg
-reg = do
-    r <- symbol "A" <|> symbol "M" <|> symbol "D"
-    return $ regFromName r
+reg = regFromName <$> (symbol "A" <|> symbol "M" <|> symbol "D")
 
 regFromName :: String -> Reg
 regFromName "A" = RegA
@@ -79,12 +68,10 @@ regFromName "M" = RegM
 regFromName "D" = RegD
 
 cComp :: Parser CComp
-cComp = try (unaryOp <|> binaryOp <|> cValue <|> cReg)
+cComp = unaryOp <|> binaryOp <|> cValue <|> cReg
 
 cValue :: Parser CComp
-cValue = do
-    v <- symbol "-1" <|> symbol "0" <|> symbol "1"
-    return $ CValue $ rawNumber v
+cValue = CValue <$> rawNumber <$> (symbol "-1" <|> symbol "0" <|> symbol "1")
 
 rawNumber :: String -> RawNumber
 rawNumber "-1" = MinusOne
@@ -95,35 +82,24 @@ cReg :: Parser CComp
 cReg = fmap CReg reg
 
 unaryOp :: Parser CComp
-unaryOp = try (negOp <|> notOp <|> incrOp <|> decrOp)
+unaryOp = negOp <|> notOp <|> incrOp <|> decrOp
 
 prefixOp :: String -> UnaryOp -> Parser CComp
-prefixOp sym op = do
-    symbol sym
-    r <- reg
-    return $ CUnary op r
+prefixOp sym op = CUnary op <$> (symbol sym *> reg)
 
 postfixOp :: String -> String -> UnaryOp -> Parser CComp
-postfixOp sym1 sym2 op = do
-    r <- reg
-    symbol sym1
-    symbol sym2
-    return $ CUnary op r
+postfixOp sym1 sym2 op = try (CUnary op <$> (reg <* symbol sym1 <* symbol sym2))
 
-negOp = prefixOp "-" Negate
+negOp = try $ prefixOp "-" Negate  -- try needed because "-1" also exists
 notOp = prefixOp "!" Not
 incrOp = postfixOp "+" "1" Incr
 decrOp = postfixOp "-" "1" Decr
 
 binaryOp :: Parser CComp
-binaryOp = try (addOp <|> subOp <|> andOp <|> orOp)
+binaryOp = addOp <|> subOp <|> andOp <|> orOp
 
 binOp :: String -> BinaryOp -> Parser CComp
-binOp sym op = do
-    a <- reg
-    symbol sym
-    b <- reg
-    return $ CBinary op a b
+binOp sym op = try (CBinary op <$> reg <* symbol sym <*> reg)
 
 addOp = binOp "+" Add
 subOp = binOp "-" Sub
@@ -131,10 +107,7 @@ andOp = binOp "&" And
 orOp  = binOp "|" Or
 
 cJump :: Parser Jmp
-cJump = do
-    symbol ";"
-    jumpType <- count 3 upperChar
-    return $ jmp jumpType
+cJump = jmp <$> (symbol ";" *> count 3 upperChar)
 
 jmp "JLT" = Jlt
 jmp "JLE" = Jle
