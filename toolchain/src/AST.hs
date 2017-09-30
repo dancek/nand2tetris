@@ -24,6 +24,11 @@ or      ::= reg "|" reg
 jump    ::= ';' jmp
 jmp     ::= "JLT" | "JLE" | "JEQ" | "JGT" | "JGE" | "JNE" | "JMP"
 
+Additionally, there's labels that mark the position in the binary code and can
+be used as a parameter to the A instruction
+
+label   ::= "(" <string> ")"
+
 -}
 
 data Reg = RegA | RegM | RegD deriving (Show, Eq)
@@ -32,9 +37,10 @@ data RawNumber = MinusOne | Zero | One deriving (Show)
 data Instruction
     = AInstr AValue
     | CInstr CDest CComp CJump
+    | Label String
     deriving (Show)
 
-data AValue = ANum Integer | ASym String deriving (Show)
+data AValue = ANum Integer | ARef String deriving (Show)
 
 type CDest = Maybe [Reg]
 data CComp
@@ -50,6 +56,5 @@ data UnaryOp = Negate | Not | Incr | Decr deriving (Show)
 data BinaryOp = Add | Sub | And | Or deriving (Show)
 
 data Jmp = Jlt | Jle | Jeq | Jgt | Jge | Jne | Jmp deriving (Show)
-
 
 type Program = [Instruction]

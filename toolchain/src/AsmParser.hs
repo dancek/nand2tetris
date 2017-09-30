@@ -35,6 +35,12 @@ symbol = L.symbol sc
 integer :: Parser Integer
 integer = lexeme L.decimal
 
+identifier :: Parser String
+identifier = lexeme ((:) <$> firstChar <*> many restChar)
+    where
+        firstChar = letterChar
+        restChar = (alphaNumChar <|> char '_' <|> char '.' <|> char '$')
+
 
 parser :: Parser Program
 parser = between scn eof instructionSeq
@@ -43,15 +49,17 @@ instructionSeq :: Parser Program
 instructionSeq = sepEndBy instruction scn
 
 instruction :: Parser Instruction
-instruction = aInstr <|> cInstr
+instruction = aInstr <|> cInstr <|> AsmParser.label
 
 aInstr :: Parser Instruction
-aInstr = do
-    symbol "@"
-    v <- integer    -- FIXME: symbols
-    return (AInstr (ANum v))
+aInstr = AInstr <$> (symbol "@" *> (aNum <|> aRef))
 
-    -- aInstr = (AInstr . Anum) <$> symbol "@" *> integer
+aNum :: Parser AValue
+aNum = ANum <$> integer
+
+aRef :: Parser AValue
+aRef = ARef <$> identifier
+
 
 cInstr :: Parser Instruction
 cInstr = CInstr <$> optional cDest <*> cComp <*> optional cJump
@@ -116,3 +124,6 @@ jmp "JGE" = Jge
 jmp "JGT" = Jgt
 jmp "JNE" = Jne
 jmp "JMP" = Jmp
+
+label :: Parser Instruction
+label = AST.Label <$> (symbol "(" *> identifier <* symbol ")")

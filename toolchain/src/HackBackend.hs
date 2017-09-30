@@ -8,24 +8,66 @@ the assembly language.
 In practice, we output the instructions one per line as plain text 0/1 bits.
 That's what the provided tools expect.
 -}
-import Text.Printf
+import Text.Printf (printf)
+import Text.Read (readMaybe)
+import Data.Maybe (catMaybes)
+import Data.List (find)
 
 import AST
 
 type MachineInstruction = String
+type SymbolTable = String -> Maybe Int
 
 codegen :: Program -> [MachineInstruction]
-codegen = fmap code
+codegen prog = catMaybes $ fmap (code $ labels prog) prog
 
-code :: Instruction -> MachineInstruction
-code (AInstr (ANum n)) = printf "0%015b" n
-code (CInstr dest comp jump) = "111" ++ compBits comp ++ destBits dest ++ jumpBits jump
-code _ = "unknown_instruction"
+-- The symbol table implementation
+-- FIXME: need to support variables, ie. undefined identifiers
 
+instrPos :: Int -> Program -> [(Instruction, Int)]
+instrPos _ [] = []
+instrPos n (Label l : rest) = (Label l, n) : instrPos n rest
+instrPos n (instr : rest) = (instr, n) : instrPos (n+1) rest
+
+labels :: Program -> SymbolTable
+labels prog l = let
+    positions = instrPos 0 prog
+    posEq a (Label b, _) = a == b
+    posEq _ _ = False
+    lpos = find (posEq l) positions
+    in case lpos of
+        Just (Label _, num) -> Just num
+        Nothing -> symbolTable l
+
+-- hardcoded default symbols
+symbolTable :: SymbolTable
+symbolTable x = case x of
+    "SP" -> Just 0
+    "LCL" -> Just 1
+    "ARG" -> Just 2
+    "THIS" -> Just 3
+    "THAT" -> Just 4
+    "SCREEN" -> Just 16384
+    "KBD" -> Just 24576
+    'R' : rest -> readMaybe rest
+    _ -> Nothing
+
+-- translate a single instruction
+code :: SymbolTable -> Instruction -> Maybe MachineInstruction
+code _ (AInstr (ANum n)) = Just $ printf "0%015b" n
+code tbl (AInstr (ARef ref)) = case tbl ref of
+    Just n -> Just $ printf "0%015b" n
+    Nothing -> Just $ "unknown label " ++ ref   -- FIXME: proper error handling
+code _ (CInstr dest comp jump) = Just $ "111" ++ compBits comp ++ destBits dest ++ jumpBits jump
+code _ (Label _) = Nothing
+
+
+destBits :: CDest -> String
 destBits Nothing = "000"
 destBits (Just regs) = [bit RegA, bit RegD, bit RegM]
     where bit r = (if r `elem` regs then '1' else '0')
 
+jumpBits :: CJump -> String
 jumpBits Nothing = "000"
 jumpBits (Just jmp) = case jmp of
     Jlt -> "100"
