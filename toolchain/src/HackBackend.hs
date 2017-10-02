@@ -11,51 +11,61 @@ That's what the provided tools expect.
 import Text.Printf (printf)
 import Text.Read (readMaybe)
 import Data.Maybe (catMaybes)
-import Data.List (find)
+import Data.List (find, nub)
 
 import AST
 
 type MachineInstruction = String
-type SymbolTable = String -> Maybe Int
+type SymbolTable = [(String, Int)]
 
 codegen :: Program -> [MachineInstruction]
-codegen prog = catMaybes $ fmap (code $ labels prog) prog
+codegen prog = catMaybes $ fmap (code $ symbolTable prog) prog
 
--- The symbol table implementation
--- FIXME: need to support variables, ie. undefined identifiers
 
-instrPos :: Int -> Program -> [(Instruction, Int)]
-instrPos _ [] = []
-instrPos n (Label l : rest) = (Label l, n) : instrPos n rest
-instrPos n (instr : rest) = (instr, n) : instrPos (n+1) rest
+-- SYMBOL TABLE
+
+baseSymbols :: SymbolTable
+baseSymbols = [ ("SP", 0),
+                ("LCL", 1),
+                ("ARG", 2),
+                ("THIS", 3),
+                ("THAT", 4),
+                ("SCREEN", 16384),
+                ("KBD", 24576)]
+
+registers :: SymbolTable
+registers = [("R" ++ show n, n) | n <- [0..15]]
 
 labels :: Program -> SymbolTable
-labels prog l = let
-    positions = instrPos 0 prog
-    posEq a (Label b, _) = a == b
-    posEq _ _ = False
-    lpos = find (posEq l) positions
-    in case lpos of
-        Just (Label _, num) -> Just num
-        Nothing -> symbolTable l
+labels prog = let
+    -- instruction positions (don't increment counter for labels)
+    instrPos :: Int -> Program -> [(Instruction, Int)]
+    instrPos _ [] = []
+    instrPos n (Label l : rest) = (Label l, n) : instrPos n rest
+    instrPos n (instr : rest) = (instr, n) : instrPos (n+1) rest
+    in [(l, pos) | (Label l, pos) <- instrPos 0 prog]
 
--- hardcoded default symbols
-symbolTable :: SymbolTable
-symbolTable x = case x of
-    "SP" -> Just 0
-    "LCL" -> Just 1
-    "ARG" -> Just 2
-    "THIS" -> Just 3
-    "THAT" -> Just 4
-    "SCREEN" -> Just 16384
-    "KBD" -> Just 24576
-    'R' : rest -> readMaybe rest
-    _ -> Nothing
+-- vars are the symbols that aren't labels or reserved symbols
+variables :: Program -> SymbolTable -> SymbolTable
+variables prog tbl = let
+    refs = [(ref, lookup ref tbl) | AInstr (ARef ref) <- prog]
+    vars = nub [x | (x, Nothing) <- refs]
+    in zip vars [0x0010..]
+
+-- all pieces of the symbol table, combined
+symbolTable :: Program -> SymbolTable
+symbolTable prog = let
+    tbl = baseSymbols ++ registers ++ labels prog
+    varTbl = variables prog tbl
+    in tbl ++ varTbl
+
+
+-- MACHINE CODE
 
 -- translate a single instruction
 code :: SymbolTable -> Instruction -> Maybe MachineInstruction
 code _ (AInstr (ANum n)) = Just $ printf "0%015b" n
-code tbl (AInstr (ARef ref)) = case tbl ref of
+code tbl (AInstr (ARef ref)) = case lookup ref tbl of
     Just n -> Just $ printf "0%015b" n
     Nothing -> Just $ "unknown label " ++ ref   -- FIXME: proper error handling
 code _ (CInstr dest comp jump) = Just $ "111" ++ compBits comp ++ destBits dest ++ jumpBits jump
