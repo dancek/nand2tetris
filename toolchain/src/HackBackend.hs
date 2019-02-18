@@ -1,6 +1,8 @@
+{-# LANGUAGE LambdaCase #-}
+
 module HackBackend (codegen) where
 
-{- 
+{-
 Generate "machine code" for the Hack machine as specified in the Nand2Tetris
 materials. Basically supports the Haskell data representation (AST.hs) of
 the assembly language.
@@ -39,11 +41,9 @@ registers = [("R" ++ show n, n) | n <- [0..15]]
 labels :: Program -> SymbolTable
 labels prog = let
     -- instruction positions (don't increment counter for labels)
-    instrPos :: Int -> Program -> [(Instruction, Int)]
-    instrPos _ [] = []
-    instrPos n (Label l : rest) = (Label l, n) : instrPos n rest
-    instrPos n (instr : rest) = (instr, n) : instrPos (n+1) rest
-    in [(l, pos) | (Label l, pos) <- instrPos 0 prog]
+    increments = (\case Label _ -> 0 ; _ -> 1) <$> prog
+    positions = scanl1 (+) increments
+    in [(l, pos) | (Label l, pos) <- zip prog positions]
 
 -- vars are the symbols that aren't labels or reserved symbols
 variables :: Program -> SymbolTable -> SymbolTable
@@ -65,9 +65,7 @@ symbolTable prog = let
 -- translate a single instruction
 code :: SymbolTable -> Instruction -> Maybe MachineInstruction
 code _ (AInstr (ANum n)) = Just $ printf "0%015b" n
-code tbl (AInstr (ARef ref)) = case lookup ref tbl of
-    Just n -> Just $ printf "0%015b" n
-    Nothing -> Just $ "unknown label " ++ ref   -- FIXME: proper error handling
+code tbl (AInstr (ARef ref)) = printf "0%015b" <$> lookup ref tbl
 code _ (CInstr dest comp jump) = Just $ "111" ++ compBits comp ++ destBits dest ++ jumpBits jump
 code _ (Label _) = Nothing
 
