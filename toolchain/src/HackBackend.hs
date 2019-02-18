@@ -15,7 +15,7 @@ import Text.Read (readMaybe)
 import Data.Maybe (catMaybes)
 import Data.List (find, nub)
 
-import AST
+import AsmAST
 
 type MachineInstruction = String
 type SymbolTable = [(String, Int)]

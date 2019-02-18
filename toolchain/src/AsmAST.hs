@@ -1,5 +1,5 @@
-module AST where
-    
+module AsmAST where
+
 {-
 Parser data types for the nand2tetris assembly language. The language contains two instructions, A and C:
 
@@ -44,8 +44,8 @@ data AValue = ANum Integer | ARef String deriving (Show)
 
 type CDest = Maybe [Reg]
 data CComp
-    = CValue RawNumber 
-    | CReg Reg 
+    = CValue RawNumber
+    | CReg Reg
     | CUnary UnaryOp Reg
     | CBinary BinaryOp Reg Reg
     deriving (Show)

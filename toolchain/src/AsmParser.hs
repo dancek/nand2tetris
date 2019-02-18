@@ -1,39 +1,15 @@
 module AsmParser (parser) where
 
-import Data.Functor (void)
-import Data.Void    
+import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import AST
+import AsmAST
+import LineLexing
 
 type Parser = Parsec Void String
 
-
-lineComment  = L.skipLineComment "//"
-blockComment = L.skipBlockComment "/*" "*/"
-
--- two space consumers: scn takes any space including newlines, sc doesn't take newline
-scn :: Parser ()
-scn = L.space space1 lineComment blockComment
-
-sc :: Parser ()
-sc = L.space lineSpace lineComment blockComment
-    where
-        lineSpace = void $ takeWhile1P Nothing isLineSpace
-        isLineSpace ' '  = True
-        isLineSpace '\t' = True
-        isLineSpace _    = False
-
-lexeme :: Parser a -> Parser a
-lexeme = L.lexeme sc
-
-symbol :: String -> Parser String
-symbol = L.symbol sc
-
-integer :: Parser Integer
-integer = lexeme L.decimal
 
 identifier :: Parser String
 identifier = lexeme ((:) <$> firstChar <*> many restChar)
@@ -126,4 +102,4 @@ jmp "JNE" = Jne
 jmp "JMP" = Jmp
 
 label :: Parser Instruction
-label = AST.Label <$> (symbol "(" *> identifier <* symbol ")")
+label = AsmAST.Label <$> (symbol "(" *> identifier <* symbol ")")
