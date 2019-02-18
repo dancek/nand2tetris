@@ -9,5 +9,5 @@ main :: IO ()
 main = do
     input <- getContents
     case assembler input of
-        Left e -> hPutStr stderr $ parseErrorPretty' input e
+        Left e -> hPutStr stderr $ errorBundlePretty e
         Right r -> putStr r
