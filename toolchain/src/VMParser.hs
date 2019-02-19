@@ -22,15 +22,15 @@ command = CArithmetic <$> arithmeticCommand <|>
 
 arithmeticCommand :: Parser ArithmeticCommand
 arithmeticCommand = ar <$>
-  (symbol "add" <|>
-   symbol "sub" <|>
-   symbol "neg" <|>
-   symbol "eq" <|>
-   symbol "gt" <|>
-   symbol "lt" <|>
-   symbol "and" <|>
-   symbol "or" <|>
-   symbol "not")
+  (symbol "add"
+  <|> symbol "sub"
+  <|> symbol "neg"
+  <|> symbol "eq"
+  <|> symbol "gt"
+  <|> symbol "lt"
+  <|> symbol "and"
+  <|> symbol "or"
+  <|> symbol "not")
 
 ar "add" = CAdd
 ar "sub" = CSub
@@ -44,10 +44,24 @@ ar "not" = CNot
 
 memoryCommand :: Parser MemoryCommand
 memoryCommand = mcmd <$> (symbol "push" <|> symbol "pop")
-  <*> (mseg <$> symbol "local")
+  <*> (mseg <$> (symbol "argument"
+                <|> symbol "local"
+                <|> symbol "static"
+                <|> symbol "constant"
+                <|> symbol "this"
+                <|> symbol "that"
+                <|> symbol "pointer"
+                <|> symbol "temp"))
   <*> integer
 
 mcmd "push" = CPush
 mcmd "pop" = CPop
 
+mseg "argument" = MArgument
 mseg "local" = MLocal
+mseg "static" = MStatic
+mseg "constant" = MConstant
+mseg "this" = MThis
+mseg "that" = MThat
+mseg "pointer" = MPointer
+mseg "temp" = MTemp
