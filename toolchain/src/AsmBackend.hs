@@ -23,6 +23,9 @@ loadValue :: MemorySegment -> Integer -> [AsmInstruction]
 loadValue MConstant i = [
   "@" ++ show i,
   "D=A"]
+loadValue MTemp i = [
+  "@" ++ show (5 + i),
+  "D=M"]
 loadValue memseg i = [
   "@" ++ segmentSymbol memseg,
   "D=A",
@@ -45,6 +48,16 @@ pushRegD = [
   "M=M+1"]
 
 popValue :: MemorySegment -> Integer -> [AsmInstruction]
+popValue MTemp i = [
+  -- SP--
+  "@SP",
+  "M=M-1",
+  -- D = *SP
+  "A=M",
+  "D=M",
+  -- tmp[i] = D
+  "@" ++ show (5+i),
+  "M=D"]
 popValue memseg i = [
   -- addr = seg + i
   "@" ++ segmentSymbol memseg,
