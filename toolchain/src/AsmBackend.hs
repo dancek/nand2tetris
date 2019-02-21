@@ -6,13 +6,20 @@ Generate assembly code from VM AST.
 
 import VMAST
 
-vmCodegen = Nothing
+type AsmInstruction = String
 
-pushValue :: MemorySegment -> Integer -> [String]
+vmCodegen :: Program -> [AsmInstruction]
+vmCodegen = concatMap code
+
+code :: Command -> [AsmInstruction]
+code (CMemory (CPush ms i)) = pushValue ms i
+code (CMemory (CPop ms i)) = popValue ms i
+
+pushValue :: MemorySegment -> Integer -> [AsmInstruction]
 pushValue ms i = loadValue ms i ++ pushRegD
 
 -- Load value from given memory segment to the D register
-loadValue :: MemorySegment -> Integer -> [String]
+loadValue :: MemorySegment -> Integer -> [AsmInstruction]
 loadValue MConstant i = [
   "@" ++ show i,
   "D=A"]
@@ -29,7 +36,7 @@ segmentSymbol MThis = "THIS"
 segmentSymbol MThat = "THAT"
 
 -- Push register D content
-pushRegD :: [String]
+pushRegD :: [AsmInstruction]
 pushRegD = [
   "@SP",
   "A=M",
@@ -37,7 +44,7 @@ pushRegD = [
   "@SP",
   "M=M+1"]
 
-popValue :: MemorySegment -> Integer -> [String]
+popValue :: MemorySegment -> Integer -> [AsmInstruction]
 popValue memseg i = [
   -- addr = seg + i
   "@" ++ segmentSymbol memseg,

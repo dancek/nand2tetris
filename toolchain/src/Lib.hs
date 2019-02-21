@@ -1,4 +1,4 @@
-module Lib (assembler) where
+module Lib (assembler, vmTranslator) where
 
 import Text.Megaparsec
 import Data.Void
@@ -8,7 +8,19 @@ import HackBackend (asmCodegen)
 import VMParser (vmParser)
 import AsmBackend (vmCodegen)
 
-assembler :: String -> Either (ParseErrorBundle String Void) String
-assembler asm = case runParser asmParser "" asm of
-    Left e          -> Left e
-    Right result    -> Right $ unlines $ asmCodegen result
+type ParsingError = (ParseErrorBundle String Void)
+type Compiler = String -> Either ParsingError String
+
+assembler :: Compiler
+assembler = buildCompiler asmParser asmCodegen
+
+vmTranslator :: Compiler
+vmTranslator = buildCompiler vmParser vmCodegen
+
+buildCompiler :: Parsec Void String program ->
+                 (program -> [String]) ->
+                 Compiler
+buildCompiler parser codegen sourceCode =
+    case runParser parser "" sourceCode of
+        Left e          -> Left e
+        Right result    -> Right $ unlines $ codegen result
