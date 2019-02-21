@@ -1,3 +1,4 @@
 *.out
 toolchain/toolchain.iml
 toolchain/.idea
+07/**/*.asm

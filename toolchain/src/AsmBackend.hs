@@ -14,6 +14,7 @@ vmCodegen = concatMap code
 code :: Command -> [AsmInstruction]
 code (CMemory (CPush ms i)) = pushValue ms i
 code (CMemory (CPop ms i)) = popValue ms i
+code (CArithmetic cmd) = arithmetic cmd
 
 pushValue :: MemorySegment -> Integer -> [AsmInstruction]
 pushValue ms i = loadValue ms i ++ pushRegD
@@ -77,3 +78,52 @@ popValue memseg i = [
   "A=A+1",
   "M=D"]
 
+arithmetic :: ArithmeticCommand -> [AsmInstruction]
+arithmetic CAdd = stackTopTwo "+"
+arithmetic CSub = stackTopTwo "-"
+arithmetic CAnd = stackTopTwo "&"
+arithmetic COr = stackTopTwo "|"
+
+arithmetic CNeg = stackTop "-"
+arithmetic CNot = stackTop "!"
+
+arithmetic CEq = testTopTwo "JEQ"
+arithmetic CGt = testTopTwo "JGT"
+arithmetic CLt = testTopTwo "JLT"
+
+
+-- Manipulate stack top value
+stackTop operator = [
+  "@SP",
+  "A=M-1",
+  "M=" ++ operator ++ "M"]
+
+-- Decrement stack pointer, put old top in D and current in M. Then apply operator.
+stackTopTwo operator = [
+  "@SP",
+  "M=M-1",
+  "A=M",
+  "D=M",
+  "A=A-1",
+  "M=M" ++ operator ++ "D"]
+
+-- run logical operation on top two
+testTopTwo jump = [
+  "@SP",
+  "M=M-1",
+  "A=M",
+  "D=M",
+  "A=A-1",
+  "D=M-D",
+  "@T" ++ testLabel,
+  "D;" ++ jump,
+  "@F" ++ testLabel,
+  "D=0;JMP",
+  "(T" ++ testLabel ++ ")",
+  "D=-1",
+  "(F" ++ testLabel ++ ")",
+  "@SP",
+  "A=M-1",
+  "M=D"]
+
+testLabel = "0" -- FIXME: make this stateful
