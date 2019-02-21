@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module HackBackend (codegen) where
+module HackBackend (asmCodegen) where
 
 {-
 Generate "machine code" for the Hack machine as specified in the Nand2Tetris
@@ -20,8 +20,8 @@ import AsmAST
 type MachineInstruction = String
 type SymbolTable = [(String, Int)]
 
-codegen :: Program -> [MachineInstruction]
-codegen prog = catMaybes $ fmap (code $ symbolTable prog) prog
+asmCodegen :: Program -> [MachineInstruction]
+asmCodegen prog = catMaybes $ fmap (code $ symbolTable prog) prog
 
 
 -- SYMBOL TABLE

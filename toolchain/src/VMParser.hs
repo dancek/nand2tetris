@@ -1,4 +1,4 @@
-module VMParser (parser) where
+module VMParser (vmParser) where
 
 import Data.Void
 import Text.Megaparsec
@@ -10,8 +10,8 @@ import VMAST
 
 type Parser = Parsec Void String
 
-parser :: Parser Program
-parser = between scn eof commandSeq
+vmParser :: Parser Program
+vmParser = between scn eof commandSeq
 
 commandSeq :: Parser Program
 commandSeq = sepEndBy command scn

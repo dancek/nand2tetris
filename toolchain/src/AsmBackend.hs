@@ -6,6 +6,8 @@ Generate assembly code from VM AST.
 
 import VMAST
 
+vmCodegen = Nothing
+
 pushValue :: MemorySegment -> Integer -> [String]
 pushValue ms i = loadValue ms i ++ pushRegD
 

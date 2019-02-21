@@ -1,4 +1,4 @@
-module AsmParser (parser) where
+module AsmParser (asmParser) where
 
 import Data.Void
 import Text.Megaparsec
@@ -18,8 +18,8 @@ identifier = lexeme ((:) <$> firstChar <*> many restChar)
         restChar = (alphaNumChar <|> char '_' <|> char '.' <|> char '$')
 
 
-parser :: Parser Program
-parser = between scn eof instructionSeq
+asmParser :: Parser Program
+asmParser = between scn eof instructionSeq
 
 instructionSeq :: Parser Program
 instructionSeq = sepEndBy instruction scn
