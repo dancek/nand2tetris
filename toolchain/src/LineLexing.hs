@@ -1,4 +1,4 @@
-module LineLexing (sc, scn, lexeme, symbol, integer) where
+module LineLexing (sc, scn, lexeme, symbol, integer, symbolToData) where
 
 import Data.Functor (void)
 import Data.Void
@@ -32,3 +32,6 @@ symbol = L.symbol sc
 
 integer :: Parser Integer
 integer = lexeme L.decimal
+
+symbolToData :: [(String, a)] -> Parser a
+symbolToData = foldr1 (<|>) . map (\(k, v) -> (const v <$> symbol k))

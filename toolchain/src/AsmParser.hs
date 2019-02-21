@@ -44,23 +44,19 @@ cDest :: Parser [Reg]
 cDest = try (some reg <* symbol "=")
 
 reg :: Parser Reg
-reg = regFromName <$> (symbol "A" <|> symbol "M" <|> symbol "D")
-
-regFromName :: String -> Reg
-regFromName "A" = RegA
-regFromName "M" = RegM
-regFromName "D" = RegD
+reg = symbolToData [
+    ("A", RegA),
+    ("M", RegM),
+    ("D", RegD)]
 
 cComp :: Parser CComp
 cComp = unaryOp <|> binaryOp <|> cValue <|> cReg
 
 cValue :: Parser CComp
-cValue = CValue <$> rawNumber <$> (symbol "-1" <|> symbol "0" <|> symbol "1")
-
-rawNumber :: String -> RawNumber
-rawNumber "-1" = MinusOne
-rawNumber "0" = Zero
-rawNumber "1" = One
+cValue = CValue <$> symbolToData [
+    ("-1", MinusOne),
+    ("0", Zero),
+    ("1", One)]
 
 cReg :: Parser CComp
 cReg = fmap CReg reg
@@ -91,15 +87,15 @@ andOp = binOp "&" And
 orOp  = binOp "|" Or
 
 cJump :: Parser Jmp
-cJump = jmp <$> (symbol ";" *> count 3 upperChar)
-
-jmp "JLT" = Jlt
-jmp "JLE" = Jle
-jmp "JEQ" = Jeq
-jmp "JGE" = Jge
-jmp "JGT" = Jgt
-jmp "JNE" = Jne
-jmp "JMP" = Jmp
+cJump = symbol ";" *>
+    symbolToData [
+        ("JLT", Jlt),
+        ("JLE", Jle),
+        ("JEQ", Jeq),
+        ("JGE", Jge),
+        ("JGT", Jgt),
+        ("JNE", Jne),
+        ("JMP", Jmp)]
 
 label :: Parser Instruction
 label = AsmAST.Label <$> (symbol "(" *> identifier <* symbol ")")

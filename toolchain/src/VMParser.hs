@@ -21,47 +21,29 @@ command = CArithmetic <$> arithmeticCommand <|>
   CMemory <$> memoryCommand
 
 arithmeticCommand :: Parser ArithmeticCommand
-arithmeticCommand = ar <$>
-  (symbol "add"
-  <|> symbol "sub"
-  <|> symbol "neg"
-  <|> symbol "eq"
-  <|> symbol "gt"
-  <|> symbol "lt"
-  <|> symbol "and"
-  <|> symbol "or"
-  <|> symbol "not")
-
-ar "add" = CAdd
-ar "sub" = CSub
-ar "neg" = CNeg
-ar "eq" = CEq
-ar "gt" = CGt
-ar "lt" = CLt
-ar "and" = CAnd
-ar "or" = COr
-ar "not" = CNot
+arithmeticCommand = symbolToData [
+  ("add", CAdd),
+  ("sub", CSub),
+  ("neg", CNeg),
+  ("eq" , CEq),
+  ("gt" , CGt),
+  ("lt" , CLt),
+  ("and", CAnd),
+  ("or" , COr),
+  ("not", CNot)]
 
 memoryCommand :: Parser MemoryCommand
-memoryCommand = mcmd <$> (symbol "push" <|> symbol "pop")
-  <*> (mseg <$> (symbol "argument"
-                <|> symbol "local"
-                <|> symbol "static"
-                <|> symbol "constant"
-                <|> symbol "this"
-                <|> symbol "that"
-                <|> symbol "pointer"
-                <|> symbol "temp"))
+memoryCommand =
+  symbolToData [
+    ("push", CPush),
+    ("pop", CPop)]
+  <*> symbolToData [
+    ("argument", MArgument),
+    ("local", MLocal),
+    ("static", MStatic),
+    ("constant", MConstant),
+    ("this", MThis),
+    ("that", MThat),
+    ("pointer", MPointer),
+    ("temp", MTemp)]
   <*> integer
-
-mcmd "push" = CPush
-mcmd "pop" = CPop
-
-mseg "argument" = MArgument
-mseg "local" = MLocal
-mseg "static" = MStatic
-mseg "constant" = MConstant
-mseg "this" = MThis
-mseg "that" = MThat
-mseg "pointer" = MPointer
-mseg "temp" = MTemp
