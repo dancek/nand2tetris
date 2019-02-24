@@ -9,20 +9,18 @@ import Control.Monad.Trans.State
 import VMAST
 
 type AsmInstruction = String
-type CodegenState = State (Int, Program)
+type CodegenState = State Int
 
 vmCodegen :: Program -> [AsmInstruction]
-vmCodegen prog = evalState statefulCodegen (0, prog)
+vmCodegen prog = evalState (statefulCodegen prog) 0
 
-statefulCodegen :: CodegenState [AsmInstruction]
-statefulCodegen = do
-  (n, prog) <- get
-  case prog of
-    [] -> return []
-    (cmd:cmds) -> do
-      put (n+1, cmds)
-      rest <- statefulCodegen
-      return $ (code n cmd) ++ rest
+statefulCodegen :: Program -> CodegenState [AsmInstruction]
+statefulCodegen [] = return []
+statefulCodegen (cmd:cmds) = do
+  n <- get
+  put (n+1)
+  rest <- statefulCodegen cmds
+  return $ (code n cmd) ++ rest
 
 code :: Int -> Command-> [AsmInstruction]
 code _ (CMemory (CPush ms i)) = pushValue ms i
