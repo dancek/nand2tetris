@@ -30,6 +30,7 @@ code :: Int -> Command-> [AsmInstruction]
 code _ (CMemory (CPush ms i)) = pushValue ms i
 code _ (CMemory (CPop ms i)) = popValue ms i
 code n (CArithmetic cmd) = arithmetic n cmd
+code _ (CBranching cmd) = branching cmd
 
 pushValue :: MemorySegment -> Integer -> [AsmInstruction]
 pushValue ms i = loadValue ms i ++ pushRegD
@@ -153,3 +154,19 @@ testTopTwo n jump =
     "@SP",
     "A=M-1",
     "M=D"]
+
+branching :: BranchingCommand -> [AsmInstruction]
+branching (CLabel label) = ["(" ++ label ++ ")"]
+branching (CGoto label) = [
+  "@" ++ label,
+  "0;JMP"]
+branching (CIfGoto label) = [
+  -- SP--
+  "@SP",
+  "M=M-1",
+  -- D = *SP
+  "A=M",
+  "D=M",
+  -- jump if D
+  "@" ++ label,
+  "D;JNE"]
