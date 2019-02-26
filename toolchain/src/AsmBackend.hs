@@ -8,6 +8,10 @@ import Control.Monad.Trans.State
 
 import VMAST
 
+-- memory related constants
+tmpBaseAddr = 5
+staticNamespace = "Static" -- TODO: use filename?
+
 type AsmInstruction = String
 type CodegenState = State Int
 
@@ -32,17 +36,22 @@ pushValue ms i = loadValue ms i ++ pushRegD
 
 -- Load value from given memory segment to the D register
 loadValue :: MemorySegment -> Integer -> [AsmInstruction]
+loadValue MTemp i = loadAddress $ show (5 + i)
+loadValue MStatic i = loadAddress $ staticNamespace ++ "." ++ show i
+loadValue MPointer 0 = loadAddress $ segmentSymbol MThis
+loadValue MPointer 1 = loadAddress $ segmentSymbol MThat
 loadValue MConstant i = [
   "@" ++ show i,
   "D=A"]
-loadValue MTemp i = [
-  "@" ++ show (5 + i),
-  "D=M"]
 loadValue memseg i = [
   "@" ++ segmentSymbol memseg,
   "D=A",
   "@" ++ show i,
   "A=A+D",
+  "D=M"]
+
+loadAddress addr = [
+  "@" ++ addr,
   "D=M"]
 
 segmentSymbol MLocal = "LCL"
@@ -60,16 +69,10 @@ pushRegD = [
   "M=M+1"]
 
 popValue :: MemorySegment -> Integer -> [AsmInstruction]
-popValue MTemp i = [
-  -- SP--
-  "@SP",
-  "M=M-1",
-  -- D = *SP
-  "A=M",
-  "D=M",
-  -- tmp[i] = D
-  "@" ++ show (5+i),
-  "M=D"]
+popValue MTemp i = popAddress $ show $ tmpBaseAddr + i
+popValue MStatic i = popAddress $ staticNamespace ++ "." ++ show i
+popValue MPointer 0 = popAddress $ segmentSymbol MThis
+popValue MPointer 1 = popAddress $ segmentSymbol MThat
 popValue memseg i = [
   -- addr = seg + i
   "@" ++ segmentSymbol memseg,
@@ -88,6 +91,18 @@ popValue memseg i = [
   "D=M",
   "A=A+1",
   "M=D"]
+
+popAddress addr = [
+  -- SP--
+  "@SP",
+  "M=M-1",
+  -- D = *SP
+  "A=M",
+  "D=M",
+  -- addr = D
+  "@" ++ addr,
+  "M=D"]
+
 
 arithmetic :: Int -> ArithmeticCommand -> [AsmInstruction]
 arithmetic _ CAdd = stackTopTwo "+"

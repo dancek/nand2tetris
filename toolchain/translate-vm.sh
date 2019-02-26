@@ -1,4 +1,7 @@
 #!/bin/zsh
+set -e
+
+stack build
 
 for f in ../07/**/*.vm; do
   echo $f
