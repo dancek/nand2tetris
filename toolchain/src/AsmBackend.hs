@@ -45,7 +45,7 @@ loadValue MConstant i = [
   "D=A"]
 loadValue memseg i = [
   "@" ++ segmentSymbol memseg,
-  "D=A",
+  "D=M",
   "@" ++ show i,
   "A=A+D",
   "D=M"]
@@ -76,7 +76,7 @@ popValue MPointer 1 = popAddress $ segmentSymbol MThat
 popValue memseg i = [
   -- addr = seg + i
   "@" ++ segmentSymbol memseg,
-  "D=A",
+  "D=M",
   "@" ++ show i,
   "D=A+D",
   -- *SP = addr
@@ -90,6 +90,7 @@ popValue memseg i = [
   "A=M",
   "D=M",
   "A=A+1",
+  "A=M",
   "M=D"]
 
 popAddress addr = [
