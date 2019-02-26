@@ -19,7 +19,8 @@ commandSeq = sepEndBy command scn
 command :: Parser Command
 command = CArithmetic <$> arithmeticCommand <|>
   CMemory <$> memoryCommand <|>
-  CBranching <$> branchingCommand
+  CBranching <$> branchingCommand <|>
+  CFun <$> functionCommand
 
 arithmeticCommand :: Parser ArithmeticCommand
 arithmeticCommand = symbolToData [
@@ -59,3 +60,15 @@ branchingCommand =
 
 labelName :: Parser Label
 labelName = lexeme $ many (upperChar <|> char '_')
+
+functionCommand :: Parser FunctionCommand
+functionCommand =
+  symbolToData [("return", CReturn)]
+  <|> symbolToData [
+    ("function", CFunction),
+    ("call", CCall)]
+  <*> functionName
+  <*> integer
+
+functionName :: Parser Function
+functionName = lexeme $ many (letterChar <|> char '_' <|> char '.' <|> char '$')
