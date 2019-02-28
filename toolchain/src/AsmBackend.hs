@@ -10,7 +10,8 @@ import VMAST
 
 -- memory related constants
 tmpBaseAddr = 5
-staticNamespace = "Static" -- TODO: use filename?
+filename = "TODO_filename" -- FIXME
+staticNamespace = filename ++ "$static"
 
 type AsmInstruction = String
 type CodegenState = State Int
@@ -31,6 +32,7 @@ code _ (CMemory (CPush ms i)) = pushValue ms i
 code _ (CMemory (CPop ms i)) = popValue ms i
 code n (CArithmetic cmd) = arithmetic n cmd
 code _ (CBranching cmd) = branching cmd
+code n (CFun cmd) = functionCmd n cmd
 
 pushValue :: MemorySegment -> Integer -> [AsmInstruction]
 pushValue ms i = loadValue ms i ++ pushRegD
@@ -170,3 +172,47 @@ branching (CIfGoto label) = [
   -- jump if D
   "@" ++ label,
   "D;JNE"]
+
+functionCmd :: Int -> FunctionCommand -> [AsmInstruction]
+functionCmd linenum (CCall f nArgs) = (
+  let returnLabel = "return_" ++ show linenum in
+    -- push returnLabel
+    [ "@" ++ returnLabel
+    , "D=A"
+    ] ++ pushRegD
+    -- push LCL, ARG, THIS, THAT
+    ++ pushSegmentPointer MLocal
+    ++ pushSegmentPointer MArgument
+    ++ pushSegmentPointer MThis
+    ++ pushSegmentPointer MThat
+    -- ARG = SP - 5 - nArgs
+    ++ [ "@SP"
+       , "D=M"
+       , "@" ++ show (5 + nArgs)
+       , "D=D-A"
+       , "@" ++ segmentSymbol MArgument
+       , "M=D"
+    -- LCL = SP
+       , "@SP"
+       , "D=M"
+       , "@" ++ segmentSymbol MLocal
+       , "M=D"
+    -- goto f
+       , "@" ++ functionLabel f
+       , "0;JMP"
+    -- label
+       , "(" ++ returnLabel ++ ")"
+       ]
+  )
+
+functionCmd linenum (CFunction f nVars) = (
+  [ "(" ++ functionLabel f ++ ")" ]
+  ++ concat (replicate (fromIntegral nVars) (pushValue MConstant 0))
+  )
+
+pushSegmentPointer :: MemorySegment -> [AsmInstruction]
+pushSegmentPointer memseg = [
+  "@" ++ segmentSymbol memseg,
+  "D=M"] ++ pushRegD
+
+functionLabel f = "function_" ++ f
