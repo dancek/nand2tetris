@@ -39,7 +39,7 @@ pushValue ms i = loadValue ms i ++ pushRegD
 
 -- Load value from given memory segment to the D register
 loadValue :: MemorySegment -> Integer -> [AsmInstruction]
-loadValue MTemp i = loadAddress $ show (5 + i)
+loadValue MTemp i = loadAddress $ show (tmpBaseAddr + i)
 loadValue MStatic i = loadAddress $ staticNamespace ++ "." ++ show i
 loadValue MPointer 0 = loadAddress $ segmentSymbol MThis
 loadValue MPointer 1 = loadAddress $ segmentSymbol MThat
@@ -205,14 +205,61 @@ functionCmd linenum (CCall f nArgs) = (
        ]
   )
 
-functionCmd linenum (CFunction f nVars) = (
+functionCmd _ (CFunction f nVars) = (
   [ "(" ++ functionLabel f ++ ")" ]
   ++ concat (replicate (fromIntegral nVars) (pushValue MConstant 0))
+  )
+
+functionCmd _ CReturn =
+  -- use TEMP[6] and TEMP[7] for temp vars
+  let endFrame = show $ tmpBaseAddr + 6
+      retAddr  = show $ tmpBaseAddr + 7 in (
+    -- endFrame = LCL
+    [ "@" ++ segmentSymbol MLocal
+    , "D=M"
+    , "@" ++ endFrame
+    , "M=D"
+    -- retAddr = *(endFrame - 5)
+    , "@5"
+    , "A=D-A"
+    , "D=M"
+    , "@" ++ retAddr
+    , "M=D"
+    ] ++
+    -- *ARG = pop()
+    popValue MArgument 0 ++
+    -- SP = ARG+1
+    [ "@" ++ segmentSymbol MArgument
+    , "D=M+1"
+    , "@SP"
+    , "M=D"
+    ] ++
+    -- reset state to what it was before call
+    loadSegmentPointer MThat endFrame ++
+    loadSegmentPointer MThis endFrame ++
+    loadSegmentPointer MArgument endFrame ++
+    loadSegmentPointer MLocal endFrame ++
+    -- goto retAddr
+    [ "@" ++ retAddr
+    , "A=M"
+    , "0;JMP"
+    ]
   )
 
 pushSegmentPointer :: MemorySegment -> [AsmInstruction]
 pushSegmentPointer memseg = [
   "@" ++ segmentSymbol memseg,
   "D=M"] ++ pushRegD
+
+loadSegmentPointer :: MemorySegment -> String -> [AsmInstruction]
+-- NOTE: decrements *endFrame
+loadSegmentPointer memseg endFrame =
+  [ "@" ++ endFrame
+  , "M=M-1"
+  , "A=M"
+  , "D=M"
+  , "@" ++ segmentSymbol memseg
+  , "M=D"
+  ]
 
 functionLabel f = "function_" ++ f
