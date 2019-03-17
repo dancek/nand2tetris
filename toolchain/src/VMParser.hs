@@ -71,4 +71,4 @@ functionCommand =
   <*> integer
 
 functionName :: Parser Function
-functionName = lexeme $ many (letterChar <|> char '_' <|> char '.' <|> char '$')
+functionName = lexeme $ many (alphaNumChar <|> char '_' <|> char '.' <|> char '$')

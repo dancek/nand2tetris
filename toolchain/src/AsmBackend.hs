@@ -10,43 +10,41 @@ import VMAST
 
 -- memory related constants
 tmpBaseAddr = 5
-filename = "TODO_filename" -- FIXME
-staticNamespace = filename ++ "$static"
 
 type AsmInstruction = String
 type CodegenState = State Int
 
-vmCodegen :: Program -> [AsmInstruction]
-vmCodegen prog = evalState (statefulCodegen prog) 0
+vmCodegen :: String -> Program -> [AsmInstruction]
+vmCodegen filename prog = evalState (statefulCodegen filename prog) 0
 
-statefulCodegen :: Program -> CodegenState [AsmInstruction]
-statefulCodegen [] = return []
-statefulCodegen (cmd:cmds) = do
+statefulCodegen :: String -> Program -> CodegenState [AsmInstruction]
+statefulCodegen _ [] = return []
+statefulCodegen filename (cmd:cmds) = do
   n <- get
   put (n+1)
-  rest <- statefulCodegen cmds
-  return $ (code n cmd) ++ rest
+  rest <- statefulCodegen filename cmds
+  return $ (code filename n cmd) ++ rest
 
-code :: Int -> Command-> [AsmInstruction]
-code _ (CMemory (CPush ms i)) = pushValue ms i
-code _ (CMemory (CPop ms i)) = popValue ms i
-code n (CArithmetic cmd) = arithmetic n cmd
-code _ (CBranching cmd) = branching cmd
-code n (CFun cmd) = functionCmd n cmd
+code :: String -> Int -> Command-> [AsmInstruction]
+code f _ (CMemory (CPush ms i)) = pushValue f ms i
+code f _ (CMemory (CPop ms i)) = popValue f ms i
+code _ n (CArithmetic cmd) = arithmetic n cmd
+code _ _ (CBranching cmd) = branching cmd
+code _ n (CFun cmd) = functionCmd n cmd
 
-pushValue :: MemorySegment -> Integer -> [AsmInstruction]
-pushValue ms i = loadValue ms i ++ pushRegD
+pushValue :: String -> MemorySegment -> Integer -> [AsmInstruction]
+pushValue f ms i = loadValue f ms i ++ pushRegD
 
 -- Load value from given memory segment to the D register
-loadValue :: MemorySegment -> Integer -> [AsmInstruction]
-loadValue MTemp i = loadAddress $ show (tmpBaseAddr + i)
-loadValue MStatic i = loadAddress $ staticNamespace ++ "." ++ show i
-loadValue MPointer 0 = loadAddress $ segmentSymbol MThis
-loadValue MPointer 1 = loadAddress $ segmentSymbol MThat
-loadValue MConstant i = [
+loadValue :: String -> MemorySegment -> Integer -> [AsmInstruction]
+loadValue _ MTemp i = loadAddress $ show (tmpBaseAddr + i)
+loadValue f MStatic i = loadAddress $ f ++ "$static." ++ show i
+loadValue _ MPointer 0 = loadAddress $ segmentSymbol MThis
+loadValue _ MPointer 1 = loadAddress $ segmentSymbol MThat
+loadValue _ MConstant i = [
   "@" ++ show i,
   "D=A"]
-loadValue memseg i = [
+loadValue _ memseg i = [
   "@" ++ segmentSymbol memseg,
   "D=M",
   "@" ++ show i,
@@ -71,12 +69,12 @@ pushRegD = [
   "@SP",
   "M=M+1"]
 
-popValue :: MemorySegment -> Integer -> [AsmInstruction]
-popValue MTemp i = popAddress $ show $ tmpBaseAddr + i
-popValue MStatic i = popAddress $ staticNamespace ++ "." ++ show i
-popValue MPointer 0 = popAddress $ segmentSymbol MThis
-popValue MPointer 1 = popAddress $ segmentSymbol MThat
-popValue memseg i = [
+popValue :: String -> MemorySegment -> Integer -> [AsmInstruction]
+popValue _ MTemp i = popAddress $ show $ tmpBaseAddr + i
+popValue f MStatic i = popAddress $ f ++ "$static." ++ show i
+popValue _ MPointer 0 = popAddress $ segmentSymbol MThis
+popValue _ MPointer 1 = popAddress $ segmentSymbol MThat
+popValue _ memseg i = [
   -- addr = seg + i
   "@" ++ segmentSymbol memseg,
   "D=M",
@@ -207,7 +205,7 @@ functionCmd linenum (CCall f nArgs) = (
 
 functionCmd _ (CFunction f nVars) = (
   [ "(" ++ functionLabel f ++ ")" ]
-  ++ concat (replicate (fromIntegral nVars) (pushValue MConstant 0))
+  ++ concat (replicate (fromIntegral nVars) (pushValue "" MConstant 0))
   )
 
 functionCmd _ CReturn =
@@ -227,7 +225,7 @@ functionCmd _ CReturn =
     , "M=D"
     ] ++
     -- *ARG = pop()
-    popValue MArgument 0 ++
+    popValue "" MArgument 0 ++
     -- SP = ARG+1
     [ "@" ++ segmentSymbol MArgument
     , "D=M+1"

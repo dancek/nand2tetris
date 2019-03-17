@@ -1,6 +1,7 @@
 module Main where
 
 import Data.List
+import Data.Maybe
 import System.IO
 import System.Environment
 import System.Directory
@@ -26,7 +27,7 @@ compileFile f = do
 
 compile :: Maybe String -> String -> IO ()
 compile sourceFilename input =
-    case vmTranslator input of
+    case vmTranslator (fromMaybe "stdin" sourceFilename) input of
         Left e -> hPutStr stderr $ errorBundlePretty e
         Right r -> case sourceFilename of
             Just f -> let outfile = (getFilename f) in

@@ -14,8 +14,8 @@ type Compiler = String -> Either ParsingError String
 assembler :: Compiler
 assembler = buildCompiler asmParser asmCodegen
 
-vmTranslator :: Compiler
-vmTranslator = buildCompiler vmParser vmCodegen
+vmTranslator :: String -> Compiler
+vmTranslator filename = buildCompiler vmParser (vmCodegen filename)
 
 buildCompiler :: Parsec Void String program ->
                  (program -> [String]) ->
