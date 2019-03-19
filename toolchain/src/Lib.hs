@@ -1,4 +1,4 @@
-module Lib (assembler, vmTranslator) where
+module Lib (assembler, vmTranslator, vmMain) where
 
 import Text.Megaparsec
 import Data.Void
@@ -6,7 +6,7 @@ import Data.Void
 import AsmParser (asmParser)
 import HackBackend (asmCodegen)
 import VMParser (vmParser)
-import AsmBackend (vmCodegen)
+import AsmBackend (vmCodegen, vmMain)
 
 type ParsingError = (ParseErrorBundle String Void)
 type Compiler = String -> Either ParsingError String

@@ -14,6 +14,15 @@ tmpBaseAddr = 5
 type AsmInstruction = String
 type CodegenState = State Int
 
+vmMain :: [AsmInstruction]
+vmMain =
+  [ "@261"
+  , "D=A"
+  , "@SP"
+  , "M=D"
+  , "@" ++ functionLabel "Sys.init"
+  , "0;JMP"]
+
 vmCodegen :: String -> Program -> [AsmInstruction]
 vmCodegen filename prog = evalState (statefulCodegen filename prog) 0
 
@@ -23,7 +32,9 @@ statefulCodegen filename (cmd:cmds) = do
   n <- get
   put (n+1)
   rest <- statefulCodegen filename cmds
-  return $ (code filename n cmd) ++ rest
+  return $
+    ["// " ++ show cmd] ++ -- for debugging
+    (code filename n cmd) ++ rest
 
 code :: String -> Int -> Command-> [AsmInstruction]
 code f _ (CMemory (CPush ms i)) = pushValue f ms i
