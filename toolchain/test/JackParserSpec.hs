@@ -19,4 +19,12 @@ spec = do
                 \    static int foo;\n\
                 \}"
                 `shouldParse`
-                JackClass "Foo" [StaticDec (VarDec IntType "foo")]
+                JackClass "Foo" [StaticDec (VarDec IntType ["foo"])]
+
+        it "multi-declaration" $ do
+            parse jackParser ""
+                "class Foo {\n\
+                \    static int foo, bar, baz;\n\
+                \}"
+                `shouldParse`
+                JackClass "Foo" [StaticDec (VarDec IntType ["foo", "bar", "baz"])]

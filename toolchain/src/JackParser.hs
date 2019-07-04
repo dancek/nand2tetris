@@ -56,9 +56,8 @@ classVarDec = symbolToData [
 varDec :: Parser VarDec
 varDec = VarDec
     <$> typeToData
-    <*> identifier
+    <*> commaSeparatedIdentifiers
     <* symbol ";"
-    -- TODO: multiple declarations
 
 typeToData = symbolToData [
     ("int", IntType),
@@ -66,12 +65,15 @@ typeToData = symbolToData [
     ("boolean", BooleanType)]
     -- TODO: ClassType
 
+commaSeparatedIdentifiers :: Parser [String]
+commaSeparatedIdentifiers = sepBy1 identifier (symbol ",")
+
 -- TODO: move to JackAST.hs
 data JackClass = JackClass String [ClassVarDec] deriving (Eq, Show)
 data ClassVarDec =
     StaticDec VarDec |
     FieldDec VarDec deriving (Eq, Show)
-data VarDec = VarDec Type String deriving (Eq, Show)
+data VarDec = VarDec Type [String] deriving (Eq, Show)
 data Type = IntType |
     CharType |
     BooleanType |
