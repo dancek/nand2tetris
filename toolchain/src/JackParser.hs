@@ -63,7 +63,7 @@ typeToData = symbolToData [
     ("int", IntType),
     ("char", CharType),
     ("boolean", BooleanType)]
-    -- TODO: ClassType
+    <|> ClassType <$> identifier
 
 commaSeparatedIdentifiers :: Parser [String]
 commaSeparatedIdentifiers = sepBy1 identifier (symbol ",")

@@ -28,3 +28,15 @@ spec = do
                 \}"
                 `shouldParse`
                 JackClass "Foo" [StaticDec (VarDec IntType ["foo", "bar", "baz"])]
+
+        it "fields, class types" $ do
+            parse jackParser ""
+                "class Foo {\n\
+                \    field boolean bar;\n\
+                \    field AnotherClass baz;\n\
+                \}"
+                `shouldParse`
+                JackClass "Foo"
+                    [ FieldDec (VarDec BooleanType ["bar"])
+                    , FieldDec (VarDec (ClassType "AnotherClass") ["baz"])
+                    ]
