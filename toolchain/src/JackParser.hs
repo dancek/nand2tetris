@@ -44,7 +44,7 @@ jackClass = symbolToData [("class", JackClass)]
     <*> identifier
     <* symbol "{"
     <*> many classVarDec
-    -- <*> many subroutineDec
+    <*> many subroutineDec
     <* symbol "}"
 
 classVarDec :: Parser ClassVarDec
@@ -62,19 +62,62 @@ varDec = VarDec
 typeToData = symbolToData [
     ("int", IntType),
     ("char", CharType),
-    ("boolean", BooleanType)]
+    ("boolean", BooleanType),
+    ("void", VoidType)]
     <|> ClassType <$> identifier
 
 commaSeparatedIdentifiers :: Parser [String]
 commaSeparatedIdentifiers = sepBy1 identifier (symbol ",")
 
+
+subroutineDec :: Parser SubroutineDec
+subroutineDec = SubroutineDec
+    <$ symbol "method"
+    <*> typeToData
+    <*> identifier
+    <* symbol "("
+    <*> many paramDef
+    <* symbol ")"
+    <* symbol "{"
+    <*> subroutineBody
+    <* symbol "}"
+
+paramDef = varDec
+
+subroutineBody :: Parser SubroutineBody
+subroutineBody = SubroutineBody
+    <$> many methodVarDec
+    <*> many statement
+
+methodVarDec = symbol "var" *> varDec
+
+statement = ReturnStatement <$ symbol "return;"
+
 -- TODO: move to JackAST.hs
-data JackClass = JackClass String [ClassVarDec] deriving (Eq, Show)
+data JackClass =
+    JackClass String [ClassVarDec] [SubroutineDec]
+    deriving (Eq, Show)
 data ClassVarDec =
     StaticDec VarDec |
-    FieldDec VarDec deriving (Eq, Show)
-data VarDec = VarDec Type [String] deriving (Eq, Show)
+    FieldDec VarDec
+    deriving (Eq, Show)
+data VarDec =
+    VarDec Type [String]
+    deriving (Eq, Show)
+type ParamDec = VarDec
+type LocalVarDec = VarDec
 data Type = IntType |
     CharType |
     BooleanType |
-    ClassType String deriving (Eq, Show)
+    VoidType |
+    ClassType String
+    deriving (Eq, Show)
+data SubroutineDec =
+    SubroutineDec Type String [ParamDec] SubroutineBody
+    deriving (Eq, Show)
+data SubroutineBody =
+    SubroutineBody [LocalVarDec] [Statement]
+    deriving (Eq, Show)
+data Statement =
+    ReturnStatement
+    deriving (Eq, Show)

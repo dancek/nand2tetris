@@ -11,7 +11,7 @@ spec = do
     describe "class" $ do
         it "empty body" $ do
             parse jackParser "" "class Foo {\n}"
-                `shouldParse` JackClass "Foo" []
+                `shouldParse` JackClass "Foo" [] []
 
         it "1 static var" $ do
             parse jackParser ""
@@ -19,7 +19,9 @@ spec = do
                 \    static int foo;\n\
                 \}"
                 `shouldParse`
-                JackClass "Foo" [StaticDec (VarDec IntType ["foo"])]
+                JackClass "Foo"
+                    [StaticDec (VarDec IntType ["foo"])]
+                    []
 
         it "multi-declaration" $ do
             parse jackParser ""
@@ -27,7 +29,9 @@ spec = do
                 \    static int foo, bar, baz;\n\
                 \}"
                 `shouldParse`
-                JackClass "Foo" [StaticDec (VarDec IntType ["foo", "bar", "baz"])]
+                JackClass "Foo"
+                    [StaticDec (VarDec IntType ["foo", "bar", "baz"])]
+                    []
 
         it "fields, class types" $ do
             parse jackParser ""
@@ -39,4 +43,19 @@ spec = do
                 JackClass "Foo"
                     [ FieldDec (VarDec BooleanType ["bar"])
                     , FieldDec (VarDec (ClassType "AnotherClass") ["baz"])
+                    ]
+                    []
+
+        it "empty subroutine" $ do
+            parse jackParser ""
+                "class Foo {\n\
+                \    method void noop() {\n\
+                \        return;\n\
+                \    }\n\
+                \}"
+                `shouldParse`
+                JackClass "Foo"
+                    []
+                    [ SubroutineDec VoidType "noop" []
+                        (SubroutineBody [] [ReturnStatement])
                     ]
