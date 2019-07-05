@@ -32,8 +32,12 @@ symbolToData = foldr1 (<|>) . map (\(k, v) -> (const v <$> symbol k))
 -----------------------------------------------------------
 -- PARSING
 
+wrapParser :: Parser a -> Parser a
+wrapParser = between scn eof
+
+-- Main parser
 jackParser :: Parser JackClass
-jackParser = between scn eof jackClass
+jackParser = wrapParser jackClass
 
 -- TODO: forbid identifiers from starting with number
 identifier :: Parser String
@@ -91,7 +95,10 @@ subroutineBody = SubroutineBody
 
 methodVarDec = symbol "var" *> varDec
 
-statement = ReturnStatement <$ symbol "return;"
+statement :: Parser Statement
+statement =
+    ( ReturnStatement <$ symbol "return"
+    ) <* symbol ";"
 
 -- TODO: move to JackAST.hs
 data JackClass =
