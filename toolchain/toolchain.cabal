@@ -58,6 +58,7 @@ test-suite toolchain-test
                      , megaparsec
                      , hspec
                      , hspec-megaparsec
+                     , raw-strings-qq
   other-modules:       JackParser
                      , JackParserSpec
                      , LineLexing
