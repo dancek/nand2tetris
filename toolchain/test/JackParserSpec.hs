@@ -87,3 +87,10 @@ spec = do
 
     it "this" $
       expectParse expression "this" $ ThisExpression
+
+    it "array element" $
+      expectParse expression "arr[0]" $ ArrayElement "arr" $ IntegerConstant 0
+
+    it "variable name" $
+      expectParse expression "myVariable" $ VariableName "myVariable"
+

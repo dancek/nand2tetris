@@ -104,6 +104,10 @@ statement =
     ) <* symbol ";"
 
 expression :: Parser Expression
-expression = ThisExpression <$ symbol "this"
-    <|> StringConstant <$ char '\"' <*> manyTill L.charLiteral (char '\"')
-    <|> IntegerConstant <$> integer
+expression = choice
+    [ ThisExpression <$ symbol "this"
+    , StringConstant <$ char '\"' <*> manyTill L.charLiteral (char '\"')
+    , IntegerConstant <$> integer
+    , try $ ArrayElement <$> identifier <* char '[' <*> expression <* char ']'
+    , VariableName <$> identifier
+    ]
