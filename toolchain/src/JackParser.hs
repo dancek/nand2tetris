@@ -5,6 +5,8 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
+import JackAST
+
 type Parser = Parsec Void String
 
 -----------------------------------------------------------
@@ -42,6 +44,7 @@ jackParser = wrapParser jackClass
 -- TODO: forbid identifiers from starting with number
 identifier :: Parser String
 identifier = lexeme $ many (alphaNumChar <|> char '_')
+
 
 jackClass :: Parser JackClass
 jackClass = symbolToData [("class", JackClass)]
@@ -100,31 +103,7 @@ statement =
     ( ReturnStatement <$ symbol "return"
     ) <* symbol ";"
 
--- TODO: move to JackAST.hs
-data JackClass =
-    JackClass String [ClassVarDec] [SubroutineDec]
-    deriving (Eq, Show)
-data ClassVarDec =
-    StaticDec VarDec |
-    FieldDec VarDec
-    deriving (Eq, Show)
-data VarDec =
-    VarDec Type [String]
-    deriving (Eq, Show)
-type ParamDec = VarDec
-type LocalVarDec = VarDec
-data Type = IntType |
-    CharType |
-    BooleanType |
-    VoidType |
-    ClassType String
-    deriving (Eq, Show)
-data SubroutineDec =
-    SubroutineDec Type String [ParamDec] SubroutineBody
-    deriving (Eq, Show)
-data SubroutineBody =
-    SubroutineBody [LocalVarDec] [Statement]
-    deriving (Eq, Show)
-data Statement =
-    ReturnStatement
-    deriving (Eq, Show)
+expression :: Parser Expression
+expression = ThisExpression <$ symbol "this"
+    <|> StringConstant <$ char '\"' <*> manyTill L.charLiteral (char '\"')
+    <|> IntegerConstant <$> integer

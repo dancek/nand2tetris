@@ -24,6 +24,7 @@ library
                      , VMAST
                      , AsmBackend
                      , JackParser
+                     , JackAST
   build-depends:       base >= 4.7 && < 5
                      , megaparsec
                      , transformers
@@ -61,6 +62,7 @@ test-suite toolchain-test
                      , raw-strings-qq
   other-modules:       JackParser
                      , JackParserSpec
+                     , JackAST
                      , LineLexing
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010

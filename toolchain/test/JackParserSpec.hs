@@ -4,11 +4,11 @@ module JackParserSpec where
 
 import Test.Hspec
 import Test.Hspec.Megaparsec
-
+import Text.Megaparsec (parse)
 import Text.RawString.QQ (r)
 
-import Text.Megaparsec (parse)
 import JackParser
+import JackAST
 
 -- helper for running individual parsers with proper space consumer etc
 expectParse parser input expected =
@@ -76,3 +76,14 @@ spec = do
         "method void noop() {return;}" $
         SubroutineDec VoidType "noop" [] $
           SubroutineBody [] [ReturnStatement]
+
+
+  describe "expression" $ do
+    it "integer constant" $
+      expectParse expression "123" $ IntegerConstant 123
+
+    it "string constant" $
+      expectParse expression [r|"foo"|] $ StringConstant "foo"
+
+    it "this" $
+      expectParse expression "this" $ ThisExpression
